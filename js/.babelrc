@@ -1,0 +1,6 @@
+{
+    "only": ["*.jsx"],
+    "presets": [
+		"react"
+	]
+}

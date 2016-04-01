@@ -13,6 +13,20 @@ body {
     height: 100%;
 }
 
+
+/*Scroll bar*/
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-color: rgb(90, 94, 102);
+}
+
+
 /*Searchbar*/
 
 .searchbar {
@@ -20,31 +34,43 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    padding: 10px 10px 10px 1px;
+    width: 100%;
+    padding: 10px 10px 10px 241px;
     z-index: 1;
     border-bottom: 1px solid rgb(20, 20, 20);
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.searchbar form {
+	display: inline-block;
+    box-sizing: border-box;
 }
 
 .searchbar input {
     padding: 10px;
-	margin-left: 240px;
     font-size: 16px;
-    background-color: rgb(40, 44, 52);
-    color: rgb(157, 165, 180);
     border: 0;
-    width: 600px;
+	width: 100%;
+    box-sizing: border-box;
 }
 
-.searchbar input[type=submit] {
+.searchbar input[type=text] {
+    background-color: rgb(40, 44, 52);
+    color: rgb(157, 165, 180);
+    /*width: 100%;*/
+}
+
+.searchbar input[type=button] {
     color: #EAEAEA;
     background-color: #1D8BE6;
     border-radius: 2px;
     border: 0;
     cursor: pointer;
+    /*min-width: 200px;*/
 }
 
-.searchbar input[type=submit]:hover {
+.searchbar input[type=button]:hover {
     background-color: #16578C;
 }
 
@@ -69,10 +95,19 @@ body {
     width: 100%;
     padding: 5px 10px 5px 10px;
     box-sizing: border-box;
+    cursor: pointer;
+}
+
+.sidebar .user:hover {
+    color: #1D8BE6;
 }
 
 .sidebar .selected {
     background-color: rgb(40, 44, 52);
+}
+
+.sidebar .selected:hover {
+    color: rgb(157, 165, 180);
 }
 
 
@@ -87,25 +122,25 @@ body {
     z-index: 0;
 }
 
+
 /*Tables*/
-table{
-	border-spacing: 0;
+
+table {
+    border: 1px solid rgb(30, 30, 30);
+    border-collapse: collapse;
 }
 
 table td {
-	padding: 10px;
-}
-
-table tr:nth-child(even) {
-
+    padding: 10px;
 }
 
 table tr:nth-child(odd) {
     background-color: rgb(45, 49, 58);
 }
 
-table th	{
-    background-color: black;
+table th {
+    background-color: rgb(45, 49, 58);
     color: white;
-	text-align: left;
+    text-align: left;
+    padding: 10px;
 }
