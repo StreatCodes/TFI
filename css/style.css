@@ -13,6 +13,11 @@ body {
     height: 100%;
 }
 
+h3 {
+    margin: 0;
+    color: #17B0D6;
+}
+
 
 /*Scroll bar*/
 
@@ -35,7 +40,7 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    padding: 10px 10px 10px 241px;
+    padding: 10px;
     z-index: 1;
     border-bottom: 1px solid rgb(20, 20, 20);
     white-space: nowrap;
@@ -43,15 +48,27 @@ body {
 }
 
 .searchbar form {
-	display: inline-block;
+    display: inline-block;
     box-sizing: border-box;
+}
+
+.searchbar select {
+    border: 0;
+    margin-right: 10px;
+    width: 219px;
+    padding: 10px;
+    font-size: 16px;
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: rgb(40, 44, 52);
+    color: rgb(157, 165, 180);
 }
 
 .searchbar input {
     padding: 10px;
     font-size: 16px;
     border: 0;
-	width: 100%;
+    width: 100%;
     box-sizing: border-box;
 }
 
@@ -126,20 +143,24 @@ body {
 /*Tables*/
 
 table {
-    border: 1px solid rgb(30, 30, 30);
     border-collapse: collapse;
+    margin-top: 10px;
+	width: 100%;
+}
+
+table thead tr {
+    background-color: rgb(45, 49, 58);
+    border: 1px solid rgb(30, 30, 30);
 }
 
 table td {
     padding: 10px;
-}
-
-table tr:nth-child(odd) {
-    background-color: rgb(45, 49, 58);
+    border: 1px solid rgb(30, 30, 30);
 }
 
 table th {
     background-color: rgb(45, 49, 58);
+    border: 1px solid rgb(30, 30, 30);
     color: white;
     text-align: left;
     padding: 10px;
