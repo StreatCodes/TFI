@@ -2,11 +2,23 @@
 
 var fs = require('fs');
 
-console.time('load');
 //load key and schema file
 var KEY = JSON.parse(fs.readFileSync('key.json', 'utf8')).key;
-var SCHEMA = JSON.parse(fs.readFileSync('schema.json', 'utf8'));
-console.timeEnd('load');
+var SCHEMA = new Map(JSON.parse(fs.readFileSync('schemaMap.json', 'utf8')));
+
+var qualities = [];
+qualities[0] = { quality: "Normal", color: "#B2B2B2" };
+qualities[1] = { quality: "Genuine", color: "#4D7455" };
+qualities[3] = { quality: "Vintage", color: "#476291" };
+qualities[5] = { quality: "Unusual", color: "#8650AC" };
+qualities[6] = { quality: "Unique", color: "#FFD700" };
+qualities[7] = { quality: "Community", color: "#70B04A" };
+qualities[8] = { quality: "Valve", color: "#A50F79" };
+qualities[9] = { quality: "Self-Made", color: "#70B04A" };
+qualities[11] = { quality: "Strange", color: "#CF6A32" };
+qualities[13] = { quality: "Haunted", color: "#38F3AB" };
+qualities[14] = { quality: "Collector's", color: "#AA0000" };
+qualities[15] = { quality: "Decorated Weapon", color: "#FAFAFA" };
 
 var ItemTable = React.createClass({
     displayName: 'ItemTable',
@@ -36,6 +48,8 @@ var ItemTable = React.createClass({
     },
     render: function () {
         var itemList = this.state.items;
+
+        console.log(qualities);
 
         if (itemList !== null) {
             return React.createElement(
@@ -94,24 +108,24 @@ var ItemTable = React.createClass({
                         itemList.map(function (item, i) {
                             return React.createElement(
                                 'tr',
-                                null,
+                                { key: item.id },
                                 React.createElement(
-                                    'th',
-                                    null,
-                                    item.defindex
+                                    'td',
+                                    { style: { color: qualities[item.quality].color } },
+                                    SCHEMA.get(item.defindex).name
                                 ),
                                 React.createElement(
-                                    'th',
+                                    'td',
                                     null,
                                     'Slot'
                                 ),
                                 React.createElement(
-                                    'th',
+                                    'td',
                                     null,
-                                    item.quality
+                                    qualities[item.quality].quality
                                 ),
                                 React.createElement(
-                                    'th',
+                                    'td',
                                     null,
                                     'Tradable'
                                 )
@@ -213,7 +227,7 @@ var SearchBox = React.createClass({
     displayName: 'SearchBox',
 
     getInitialState: function () {
-        return { searchString: '', appID: 440, users: [] };
+        return { searchString: 'STEAM_1:1:76561198004120193 STEAM_1:1:76561198004120194 STEAM_1:1:76561198004120195', appID: 440, users: [] };
     },
     handleSearchChange: function (e) {
         this.setState({ searchString: e.target.value });
@@ -295,7 +309,7 @@ var SearchBox = React.createClass({
                             width: "calc(50% - 115px)",
                             paddingRight: "10px"
                         } },
-                    React.createElement('input', { id: 'search', type: 'text', value: this.state.searchString, autoComplete: 'off', placeholder: 'Search' })
+                    React.createElement('input', { id: 'search', type: 'text', defaultValue: this.state.searchString, autoComplete: 'off', placeholder: 'Search' })
                 ),
                 React.createElement(
                     'form',
