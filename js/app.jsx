@@ -58,135 +58,139 @@ qualities[15] = {
 
 var ItemTable = React.createClass({
     render: function() {
-        var itemList = this.props.items;
-        var status = this.props.status;
+		var itemList = this.props.items;
 
-        if (status === 1) {
-            console.log('render table');
-            return (
-                <div>
-                    <table>
-                        <colgroup>
-                            <col style={{
-                                width: "62%"
-                            }}/>
-                            <col style={{
-                                width: "16%"
-                            }}/>
-                            <col style={{
-                                width: "16%"
-                            }}/>
-                            <col style={{
-                                width: "16%"
-                            }}/>
-                        </colgroup>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Slot</th>
-                                <th>Quality</th>
-                                <th>Tradable</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {itemList.map(function(item, i) {
-                                return (
-                                    <tr key={item.id}>
-                                        <td style={{
-                                            color: qualities[item.quality].color
-                                        }}>{SCHEMA.get(item.defindex).name}</td>
-                                        <td>Slot</td>
-                                        <td>{qualities[item.quality].quality}</td>
-                                        <td>Tradable</td>
-                                    </tr>
-                                )
-                            }.bind(this))}
-                        </tbody>
-                    </table>
-                </div>
-            );
-        } else if (status === 15) {
-            return (
-                <div>
-                    <a>Backpack private</a>
-                </div>
-            );
-        } else {
-            return (
-                <div>
-                    <a>Not loading items</a>
-                </div>
-            );
+        switch (this.state.status) {
+            case 0:
+                return (
+                    <div className="main">
+                        <h3>Loading</h3>
+                    </div>
+                );
+                break;
+            case 1:
+                return (
+                    <div>
+                        <table>
+                            <colgroup>
+                                <col style={{
+                                    width: "62%"
+                                }}/>
+                                <col style={{
+                                    width: "16%"
+                                }}/>
+                                <col style={{
+                                    width: "16%"
+                                }}/>
+                                <col style={{
+                                    width: "16%"
+                                }}/>
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Slot</th>
+                                    <th>Quality</th>
+                                    <th>Tradable</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {itemList.map(function(item, i) {
+                                    return (
+                                        <tr key={item.id}>
+                                            <td style={{
+                                                color: qualities[item.quality].color
+                                            }}>{SCHEMA.get(item.defindex).name}</td>
+                                            <td>Slot</td>
+                                            <td>{qualities[item.quality].quality}</td>
+                                            <td>Tradable</td>
+                                        </tr>
+                                    )
+                                }.bind(this))}
+                            </tbody>
+                        </table>
+                    </div>
+                );
+                break;
+            case 15:
+                return (
+                    <div className="main">
+                        <h3>Backpack private.</h3>
+                    </div>
+                );
+                break;
+            default:
+                return (
+                    <div className="main">
+                        <h3>Error :(</h3>
+                    </div>
+                );
+
         }
+
     }
 });
 
 var PlayerProfile = React.createClass({
+    //Status: 0 = loading, 1 = success, 15 = backpack private
+    //Items: list of items in user backpack
     getInitialState: function() {
-        return {items: null, status: null};
+        return {items: null, status: -1};
     },
-    handleResponse: function(data) {
-        console.log('handling player data.');
-        this.setState({status: data.result.status})
-        if (data.result.status === 1) {
-            var responseItems = data.result.items;
-            this.setState({items: responseItems});
+    XHRequest: new XMLHttpRequest(),
+    handleChange: function(e) {
+        if (this.XHRequest.readyState == 4 && this.XHRequest.status == 200) {
+            var results = JSON.parse(e.srcElement.responseText).result;
+
+            this.setState({items: results.items, status: results.status});
         }
     },
-    componentWillReceiveProps: function() {
-        console.log('player profile null');
-        this.setState({items: null, status: null});
-        if (this.props.data !== null) {
-            console.log('player profile not null');
-            this.setState({items: null});
+    handleError: function(e) {
+        console.log(e);
+    },
+    componentWillUpdate: function() {
+        console.log("profile updating");
+        if (this.props.data !== null && this.state.status === -1) {
+            console.log('get items.');
+            this.setState({items: null, status: 0});
+            if (this.props.data !== null) {
+                //Abort request if it's been sent and we havn't updated.
+                if (this.XHRequest.readyState === 1 || this.XHRequest.readyState === 2 || this.XHRequest.readyState === 3) {
+                    this.XHRequest.abort();
+                }
 
-            //var requestURL = 'http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=' + KEY + '&SteamID=' + this.props.data.steamid;
+                //set status to loading.
+                this.setState({status: 0});
 
+                var requestURL = 'http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=' + KEY + '&SteamID=' + this.props.data.steamid;
+
+                this.XHRequest.addEventListener("readystatechange", this.handleChange);
+                this.XHRequest.addEventListener("error", this.handleError);
+                this.XHRequest.open("GET", requestURL);
+                this.XHRequest.send();
+            }
         }
     },
     render: function() {
         if (this.props.data !== null) {
-            switch (this.props.status) {
-                case 0:
-                    return (
-                        <div className="main">
-                            <h3>Loading</h3>
-                        </div>
-                    );
-                    break;
-                case 1:
-                    return (
-                        <div className="main">
+            return (
+                <div className="main">
 
-                            <img src={this.props.data.avatarmedium} style={{
-                                float: "left",
-                                paddingRight: "20px",
-                                width: "64px",
-                                height: "64px"
-                            }}/>
-                            <h3 href={this.props.data.profileurl}>{this.props.data.personaname}</h3>
-                            <a>Real name: {this.props.data.realname}</a><br/>
-                            <a>Location: {this.props.data.loccountrycode}, {this.props.data.locstatecode}</a>
+                    <img src={this.props.data.avatarmedium} style={{
+                        float: "left",
+                        paddingRight: "20px",
+                        width: "64px",
+                        height: "64px"
+                    }}/>
+                    <h3 href={this.props.data.profileurl}>{this.props.data.personaname}</h3>
+                    <a>Real name: {this.props.data.realname}</a><br/>
+                    <a>Location: {this.props.data.loccountrycode}, {this.props.data.locstatecode}</a>
 
-                            {/*{this.state.status !== null ? <ItemTable status={this.state.status} items={this.state.items}/> : null}*/}
-                        </div>
-                    );
-                    break;
-                case 15:
-                    return (
-                        <div className="main">
-                            <h3>Backpack private.</h3>
-                        </div>
-                    );
-                    break;
-                default:
-                    return (
-                        <div className="main">
-                            <h3>Error :(</h3>
-                        </div>
-                    );
-
-            }
+                    {this.state.status !== -1
+                        ? <ItemTable status={this.state.status} items={this.state.items}/>
+                        : null}
+                </div>
+            );
 
         } else {
             return (
@@ -198,39 +202,12 @@ var PlayerProfile = React.createClass({
 
 var Sidebar = React.createClass({
     getInitialState: function() {
-        //Status: 0 = loading, 1 = success, 15 = backpack private
-        return {status: 0, selected: null};
-    },
-    XHRequest: new XMLHttpRequest(),
-    handleChange: function(evt) {
-        if (this.XHRequest.readyState == 4 && this.XHRequest.status == 200) {
-            var results = JSON.parse(evt.srcElement.responseText).result;
-
-            this.setState({status: results.status});
-        }
-    },
-    handleError: function(evt) {
-        console.log(evt);
+        return {selected: null};
     },
     handleClick(i, key) {
         this.setState({selected: this.props.users[i]});
 
         console.log(this.props.users[i].steamid);
-
-        //Abort request if it's been sent and we havn't updated.
-        if (this.XHRequest.readyState === 1 || this.XHRequest.readyState === 2 || this.XHRequest.readyState === 3) {
-            this.XHRequest.abort();
-        }
-
-        //set status to loading.
-        this.setState({status: 0});
-
-        var requestURL = 'http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=' + KEY + '&SteamID=' + this.props.users[i].steamid;
-
-        this.XHRequest.addEventListener("readystatechange", this.handleChange);
-        this.XHRequest.addEventListener("error", this.handleError);
-        this.XHRequest.open("GET", requestURL);
-        this.XHRequest.send();
     },
     render: function() {
         var userList = this.props.users;
@@ -245,7 +222,7 @@ var Sidebar = React.createClass({
                     }.bind(this))}
                 </div>
 
-                <PlayerProfile status={this.state.status} data={this.state.selected}/>
+                <PlayerProfile data={this.state.selected}/>
                 <br style={{
                     clear: "both"
                 }}/>
@@ -258,13 +235,24 @@ var SearchBox = React.createClass({
     getInitialState: function() {
         return {searchString: 'STEAM_1:1:76561198004120193 STEAM_1:1:76561198004120194 STEAM_1:1:76561198004120195', appID: 440, users: []};
     },
+    XHRequest: new XMLHttpRequest(),
     handleSearchChange: function(e) {
         this.setState({searchString: e.target.value});
     },
-    handleResponse: function(data) {
-        var players = data.response.players;
-        this.setState({users: players});
+    handleResponse: function(e) {
+        // var players = data.response.players;
+        // this.setState({users: players});
 
+        if (this.XHRequest.readyState == 4 && this.XHRequest.status == 200) {
+            var results = JSON.parse(e.srcElement.responseText);
+            var players = results.response.players;
+
+            this.setState({users: players});
+        }
+
+    },
+    handleError: function(e) {
+        console.log('Error getting users.');
     },
     handleSearch: function(e) {
         e.preventDefault();
@@ -287,18 +275,10 @@ var SearchBox = React.createClass({
 
         requestURL += formatedSearch;
 
-        //use fetch api to get json from steam server
-        fetch(requestURL).then(function(response) {
-            if (response.status !== 200) {
-                console.log('Error fetching user summaries, status: ' + response.status);
-                return;
-            }
-
-            // Examine the text in the response
-            response.json().then(this.handleResponse);
-        }.bind(this)).catch(function(err) {
-            console.log('Fetch Error :-S', err);
-        });
+        this.XHRequest.addEventListener("readystatechange", this.handleResponse);
+        this.XHRequest.addEventListener("error", this.handleError);
+        this.XHRequest.open("GET", requestURL);
+        this.XHRequest.send();
 
         //set search input to new formatted text
         this.setState({searchString: formatedSearch});

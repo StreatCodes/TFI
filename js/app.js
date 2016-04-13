@@ -61,114 +61,127 @@ var ItemTable = React.createClass({
 
     render: function () {
         var itemList = this.props.items;
-        var status = this.props.status;
 
-        if (status === 1) {
-            console.log('render table');
-            return React.createElement(
-                'div',
-                null,
-                React.createElement(
-                    'table',
+        switch (this.state.status) {
+            case 0:
+                return React.createElement(
+                    'div',
+                    { className: 'main' },
+                    React.createElement(
+                        'h3',
+                        null,
+                        'Loading'
+                    )
+                );
+                break;
+            case 1:
+                return React.createElement(
+                    'div',
                     null,
                     React.createElement(
-                        'colgroup',
-                        null,
-                        React.createElement('col', { style: {
-                                width: "62%"
-                            } }),
-                        React.createElement('col', { style: {
-                                width: "16%"
-                            } }),
-                        React.createElement('col', { style: {
-                                width: "16%"
-                            } }),
-                        React.createElement('col', { style: {
-                                width: "16%"
-                            } })
-                    ),
-                    React.createElement(
-                        'thead',
+                        'table',
                         null,
                         React.createElement(
-                            'tr',
+                            'colgroup',
+                            null,
+                            React.createElement('col', { style: {
+                                    width: "62%"
+                                } }),
+                            React.createElement('col', { style: {
+                                    width: "16%"
+                                } }),
+                            React.createElement('col', { style: {
+                                    width: "16%"
+                                } }),
+                            React.createElement('col', { style: {
+                                    width: "16%"
+                                } })
+                        ),
+                        React.createElement(
+                            'thead',
                             null,
                             React.createElement(
-                                'th',
-                                null,
-                                'Name'
-                            ),
-                            React.createElement(
-                                'th',
-                                null,
-                                'Slot'
-                            ),
-                            React.createElement(
-                                'th',
-                                null,
-                                'Quality'
-                            ),
-                            React.createElement(
-                                'th',
-                                null,
-                                'Tradable'
-                            )
-                        )
-                    ),
-                    React.createElement(
-                        'tbody',
-                        null,
-                        itemList.map(function (item, i) {
-                            return React.createElement(
                                 'tr',
-                                { key: item.id },
+                                null,
                                 React.createElement(
-                                    'td',
-                                    { style: {
-                                            color: qualities[item.quality].color
-                                        } },
-                                    SCHEMA.get(item.defindex).name
+                                    'th',
+                                    null,
+                                    'Name'
                                 ),
                                 React.createElement(
-                                    'td',
+                                    'th',
                                     null,
                                     'Slot'
                                 ),
                                 React.createElement(
-                                    'td',
+                                    'th',
                                     null,
-                                    qualities[item.quality].quality
+                                    'Quality'
                                 ),
                                 React.createElement(
-                                    'td',
+                                    'th',
                                     null,
                                     'Tradable'
                                 )
-                            );
-                        }.bind(this))
+                            )
+                        ),
+                        React.createElement(
+                            'tbody',
+                            null,
+                            itemList.map(function (item, i) {
+                                return React.createElement(
+                                    'tr',
+                                    { key: item.id },
+                                    React.createElement(
+                                        'td',
+                                        { style: {
+                                                color: qualities[item.quality].color
+                                            } },
+                                        SCHEMA.get(item.defindex).name
+                                    ),
+                                    React.createElement(
+                                        'td',
+                                        null,
+                                        'Slot'
+                                    ),
+                                    React.createElement(
+                                        'td',
+                                        null,
+                                        qualities[item.quality].quality
+                                    ),
+                                    React.createElement(
+                                        'td',
+                                        null,
+                                        'Tradable'
+                                    )
+                                );
+                            }.bind(this))
+                        )
                     )
-                )
-            );
-        } else if (status === 15) {
-            return React.createElement(
-                'div',
-                null,
-                React.createElement(
-                    'a',
-                    null,
-                    'Backpack private'
-                )
-            );
-        } else {
-            return React.createElement(
-                'div',
-                null,
-                React.createElement(
-                    'a',
-                    null,
-                    'Not loading items'
-                )
-            );
+                );
+                break;
+            case 15:
+                return React.createElement(
+                    'div',
+                    { className: 'main' },
+                    React.createElement(
+                        'h3',
+                        null,
+                        'Backpack private.'
+                    )
+                );
+                break;
+            default:
+                return React.createElement(
+                    'div',
+                    { className: 'main' },
+                    React.createElement(
+                        'h3',
+                        null,
+                        'Error :('
+                    )
+                );
+
         }
     }
 });
@@ -176,96 +189,78 @@ var ItemTable = React.createClass({
 var PlayerProfile = React.createClass({
     displayName: 'PlayerProfile',
 
+    //Status: 0 = loading, 1 = success, 15 = backpack private
+    //Items: list of items in user backpack
     getInitialState: function () {
-        return { items: null, status: null };
+        return { items: null, status: -1 };
     },
-    handleResponse: function (data) {
-        console.log('handling player data.');
-        this.setState({ status: data.result.status });
-        if (data.result.status === 1) {
-            var responseItems = data.result.items;
-            this.setState({ items: responseItems });
+    XHRequest: new XMLHttpRequest(),
+    handleChange: function (e) {
+        if (this.XHRequest.readyState == 4 && this.XHRequest.status == 200) {
+            var results = JSON.parse(e.srcElement.responseText).result;
+
+            this.setState({ items: results.items, status: results.status });
         }
     },
-    componentWillReceiveProps: function () {
-        console.log('player profile null');
-        this.setState({ items: null, status: null });
-        if (this.props.data !== null) {
-            console.log('player profile not null');
-            this.setState({ items: null });
+    handleError: function (e) {
+        console.log(e);
+    },
+    componentWillUpdate: function () {
+        console.log("profile updating");
+        if (this.props.data !== null && this.state.status === -1) {
+            console.log('get items.');
+            this.setState({ items: null, status: 0 });
+            if (this.props.data !== null) {
+                //Abort request if it's been sent and we havn't updated.
+                if (this.XHRequest.readyState === 1 || this.XHRequest.readyState === 2 || this.XHRequest.readyState === 3) {
+                    this.XHRequest.abort();
+                }
 
-            //var requestURL = 'http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=' + KEY + '&SteamID=' + this.props.data.steamid;
+                //set status to loading.
+                this.setState({ status: 0 });
+
+                var requestURL = 'http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=' + KEY + '&SteamID=' + this.props.data.steamid;
+
+                this.XHRequest.addEventListener("readystatechange", this.handleChange);
+                this.XHRequest.addEventListener("error", this.handleError);
+                this.XHRequest.open("GET", requestURL);
+                this.XHRequest.send();
+            }
         }
     },
     render: function () {
         if (this.props.data !== null) {
-            switch (this.props.status) {
-                case 0:
-                    return React.createElement(
-                        'div',
-                        { className: 'main' },
-                        React.createElement(
-                            'h3',
-                            null,
-                            'Loading'
-                        )
-                    );
-                    break;
-                case 1:
-                    return React.createElement(
-                        'div',
-                        { className: 'main' },
-                        React.createElement('img', { src: this.props.data.avatarmedium, style: {
-                                float: "left",
-                                paddingRight: "20px",
-                                width: "64px",
-                                height: "64px"
-                            } }),
-                        React.createElement(
-                            'h3',
-                            { href: this.props.data.profileurl },
-                            this.props.data.personaname
-                        ),
-                        React.createElement(
-                            'a',
-                            null,
-                            'Real name: ',
-                            this.props.data.realname
-                        ),
-                        React.createElement('br', null),
-                        React.createElement(
-                            'a',
-                            null,
-                            'Location: ',
-                            this.props.data.loccountrycode,
-                            ', ',
-                            this.props.data.locstatecode
-                        )
-                    );
-                    break;
-                case 15:
-                    return React.createElement(
-                        'div',
-                        { className: 'main' },
-                        React.createElement(
-                            'h3',
-                            null,
-                            'Backpack private.'
-                        )
-                    );
-                    break;
-                default:
-                    return React.createElement(
-                        'div',
-                        { className: 'main' },
-                        React.createElement(
-                            'h3',
-                            null,
-                            'Error :('
-                        )
-                    );
-
-            }
+            return React.createElement(
+                'div',
+                { className: 'main' },
+                React.createElement('img', { src: this.props.data.avatarmedium, style: {
+                        float: "left",
+                        paddingRight: "20px",
+                        width: "64px",
+                        height: "64px"
+                    } }),
+                React.createElement(
+                    'h3',
+                    { href: this.props.data.profileurl },
+                    this.props.data.personaname
+                ),
+                React.createElement(
+                    'a',
+                    null,
+                    'Real name: ',
+                    this.props.data.realname
+                ),
+                React.createElement('br', null),
+                React.createElement(
+                    'a',
+                    null,
+                    'Location: ',
+                    this.props.data.loccountrycode,
+                    ', ',
+                    this.props.data.locstatecode
+                ),
+                this.state.status !== -1 ? React.createElement(ItemTable, { status: this.state.status, items: this.state.items }) : null
+            );
         } else {
             return React.createElement(
                 'div',
@@ -280,39 +275,12 @@ var Sidebar = React.createClass({
     displayName: 'Sidebar',
 
     getInitialState: function () {
-        //Status: 0 = loading, 1 = success, 15 = backpack private
-        return { status: 0, selected: null };
-    },
-    XHRequest: new XMLHttpRequest(),
-    handleChange: function (evt) {
-        if (this.XHRequest.readyState == 4 && this.XHRequest.status == 200) {
-            var results = JSON.parse(evt.srcElement.responseText).result;
-
-            this.setState({ status: results.status });
-        }
-    },
-    handleError: function (evt) {
-        console.log(evt);
+        return { selected: null };
     },
     handleClick(i, key) {
         this.setState({ selected: this.props.users[i] });
 
         console.log(this.props.users[i].steamid);
-
-        //Abort request if it's been sent and we havn't updated.
-        if (this.XHRequest.readyState === 1 || this.XHRequest.readyState === 2 || this.XHRequest.readyState === 3) {
-            this.XHRequest.abort();
-        }
-
-        //set status to loading.
-        this.setState({ status: 0 });
-
-        var requestURL = 'http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=' + KEY + '&SteamID=' + this.props.users[i].steamid;
-
-        this.XHRequest.addEventListener("readystatechange", this.handleChange);
-        this.XHRequest.addEventListener("error", this.handleError);
-        this.XHRequest.open("GET", requestURL);
-        this.XHRequest.send();
     },
     render: function () {
         var userList = this.props.users;
@@ -331,7 +299,7 @@ var Sidebar = React.createClass({
                     );
                 }.bind(this))
             ),
-            React.createElement(PlayerProfile, { status: this.state.status, data: this.state.selected }),
+            React.createElement(PlayerProfile, { data: this.state.selected }),
             React.createElement('br', { style: {
                     clear: "both"
                 } })
@@ -345,12 +313,23 @@ var SearchBox = React.createClass({
     getInitialState: function () {
         return { searchString: 'STEAM_1:1:76561198004120193 STEAM_1:1:76561198004120194 STEAM_1:1:76561198004120195', appID: 440, users: [] };
     },
+    XHRequest: new XMLHttpRequest(),
     handleSearchChange: function (e) {
         this.setState({ searchString: e.target.value });
     },
-    handleResponse: function (data) {
-        var players = data.response.players;
-        this.setState({ users: players });
+    handleResponse: function (e) {
+        // var players = data.response.players;
+        // this.setState({users: players});
+
+        if (this.XHRequest.readyState == 4 && this.XHRequest.status == 200) {
+            var results = JSON.parse(e.srcElement.responseText);
+            var players = results.response.players;
+
+            this.setState({ users: players });
+        }
+    },
+    handleError: function (e) {
+        console.log('Error getting users.');
     },
     handleSearch: function (e) {
         e.preventDefault();
@@ -373,18 +352,10 @@ var SearchBox = React.createClass({
 
         requestURL += formatedSearch;
 
-        //use fetch api to get json from steam server
-        fetch(requestURL).then(function (response) {
-            if (response.status !== 200) {
-                console.log('Error fetching user summaries, status: ' + response.status);
-                return;
-            }
-
-            // Examine the text in the response
-            response.json().then(this.handleResponse);
-        }.bind(this)).catch(function (err) {
-            console.log('Fetch Error :-S', err);
-        });
+        this.XHRequest.addEventListener("readystatechange", this.handleResponse);
+        this.XHRequest.addEventListener("error", this.handleError);
+        this.XHRequest.open("GET", requestURL);
+        this.XHRequest.send();
 
         //set search input to new formatted text
         this.setState({ searchString: formatedSearch });
