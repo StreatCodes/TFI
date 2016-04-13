@@ -121,6 +121,7 @@ h3 {
 
 .sidebar .selected {
     background-color: rgb(40, 44, 52);
+    cursor: default;
 }
 
 .sidebar .selected:hover {

@@ -7,51 +7,64 @@ var KEY = JSON.parse(fs.readFileSync('key.json', 'utf8')).key;
 var SCHEMA = new Map(JSON.parse(fs.readFileSync('schemaMap.json', 'utf8')));
 
 var qualities = [];
-qualities[0] = { quality: "Normal", color: "#B2B2B2" };
-qualities[1] = { quality: "Genuine", color: "#4D7455" };
-qualities[3] = { quality: "Vintage", color: "#476291" };
-qualities[5] = { quality: "Unusual", color: "#8650AC" };
-qualities[6] = { quality: "Unique", color: "#FFD700" };
-qualities[7] = { quality: "Community", color: "#70B04A" };
-qualities[8] = { quality: "Valve", color: "#A50F79" };
-qualities[9] = { quality: "Self-Made", color: "#70B04A" };
-qualities[11] = { quality: "Strange", color: "#CF6A32" };
-qualities[13] = { quality: "Haunted", color: "#38F3AB" };
-qualities[14] = { quality: "Collector's", color: "#AA0000" };
-qualities[15] = { quality: "Decorated Weapon", color: "#FAFAFA" };
+qualities[0] = {
+    quality: "Normal",
+    color: "#B2B2B2"
+};
+qualities[1] = {
+    quality: "Genuine",
+    color: "#4D7455"
+};
+qualities[3] = {
+    quality: "Vintage",
+    color: "#476291"
+};
+qualities[5] = {
+    quality: "Unusual",
+    color: "#8650AC"
+};
+qualities[6] = {
+    quality: "Unique",
+    color: "#FFD700"
+};
+qualities[7] = {
+    quality: "Community",
+    color: "#70B04A"
+};
+qualities[8] = {
+    quality: "Valve",
+    color: "#A50F79"
+};
+qualities[9] = {
+    quality: "Self-Made",
+    color: "#70B04A"
+};
+qualities[11] = {
+    quality: "Strange",
+    color: "#CF6A32"
+};
+qualities[13] = {
+    quality: "Haunted",
+    color: "#38F3AB"
+};
+qualities[14] = {
+    quality: "Collector's",
+    color: "#AA0000"
+};
+qualities[15] = {
+    quality: "Decorated Weapon",
+    color: "#FAFAFA"
+};
 
 var ItemTable = React.createClass({
     displayName: 'ItemTable',
 
-    getInitialState: function () {
-        return { items: null };
-    },
-    handleResponse: function (data) {
-        var responseItems = data.result.items;
-        this.setState({ items: responseItems });
-    },
-    componentWillMount: function () {
-        var requestURL = 'http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=' + KEY + '&SteamID=' + this.props.id;
-
-        //use fetch api to get json from steam server
-        fetch(requestURL).then(function (response) {
-            if (response.status !== 200) {
-                console.log('Error fetching user items, status: ' + response.status);
-                return;
-            }
-
-            // Examine the text in the response
-            response.json().then(this.handleResponse);
-        }.bind(this)).catch(function (err) {
-            console.log('Fetch Error :-S', err);
-        });
-    },
     render: function () {
-        var itemList = this.state.items;
+        var itemList = this.props.items;
+        var status = this.props.status;
 
-        console.log(qualities);
-
-        if (itemList !== null) {
+        if (status === 1) {
+            console.log('render table');
             return React.createElement(
                 'div',
                 null,
@@ -111,7 +124,9 @@ var ItemTable = React.createClass({
                                 { key: item.id },
                                 React.createElement(
                                     'td',
-                                    { style: { color: qualities[item.quality].color } },
+                                    { style: {
+                                            color: qualities[item.quality].color
+                                        } },
                                     SCHEMA.get(item.defindex).name
                                 ),
                                 React.createElement(
@@ -134,11 +149,25 @@ var ItemTable = React.createClass({
                     )
                 )
             );
+        } else if (status === 15) {
+            return React.createElement(
+                'div',
+                null,
+                React.createElement(
+                    'a',
+                    null,
+                    'Backpack private'
+                )
+            );
         } else {
             return React.createElement(
-                'a',
+                'div',
                 null,
-                'Loading items'
+                React.createElement(
+                    'a',
+                    null,
+                    'Not loading items'
+                )
             );
         }
     }
@@ -147,39 +176,96 @@ var ItemTable = React.createClass({
 var PlayerProfile = React.createClass({
     displayName: 'PlayerProfile',
 
+    getInitialState: function () {
+        return { items: null, status: null };
+    },
+    handleResponse: function (data) {
+        console.log('handling player data.');
+        this.setState({ status: data.result.status });
+        if (data.result.status === 1) {
+            var responseItems = data.result.items;
+            this.setState({ items: responseItems });
+        }
+    },
+    componentWillReceiveProps: function () {
+        console.log('player profile null');
+        this.setState({ items: null, status: null });
+        if (this.props.data !== null) {
+            console.log('player profile not null');
+            this.setState({ items: null });
+
+            //var requestURL = 'http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=' + KEY + '&SteamID=' + this.props.data.steamid;
+        }
+    },
     render: function () {
         if (this.props.data !== null) {
-            return React.createElement(
-                'div',
-                { className: 'main' },
-                React.createElement('img', { src: this.props.data.avatarmedium, style: {
-                        float: "left",
-                        paddingRight: "20px",
-                        width: "64px",
-                        height: "64px"
-                    } }),
-                React.createElement(
-                    'h3',
-                    { href: this.props.data.profileurl },
-                    this.props.data.personaname
-                ),
-                React.createElement(
-                    'a',
-                    null,
-                    'Real name: ',
-                    this.props.data.realname
-                ),
-                React.createElement('br', null),
-                React.createElement(
-                    'a',
-                    null,
-                    'Location: ',
-                    this.props.data.loccountrycode,
-                    ', ',
-                    this.props.data.locstatecode
-                ),
-                React.createElement(ItemTable, { id: this.props.data.steamid })
-            );
+            switch (this.props.status) {
+                case 0:
+                    return React.createElement(
+                        'div',
+                        { className: 'main' },
+                        React.createElement(
+                            'h3',
+                            null,
+                            'Loading'
+                        )
+                    );
+                    break;
+                case 1:
+                    return React.createElement(
+                        'div',
+                        { className: 'main' },
+                        React.createElement('img', { src: this.props.data.avatarmedium, style: {
+                                float: "left",
+                                paddingRight: "20px",
+                                width: "64px",
+                                height: "64px"
+                            } }),
+                        React.createElement(
+                            'h3',
+                            { href: this.props.data.profileurl },
+                            this.props.data.personaname
+                        ),
+                        React.createElement(
+                            'a',
+                            null,
+                            'Real name: ',
+                            this.props.data.realname
+                        ),
+                        React.createElement('br', null),
+                        React.createElement(
+                            'a',
+                            null,
+                            'Location: ',
+                            this.props.data.loccountrycode,
+                            ', ',
+                            this.props.data.locstatecode
+                        )
+                    );
+                    break;
+                case 15:
+                    return React.createElement(
+                        'div',
+                        { className: 'main' },
+                        React.createElement(
+                            'h3',
+                            null,
+                            'Backpack private.'
+                        )
+                    );
+                    break;
+                default:
+                    return React.createElement(
+                        'div',
+                        { className: 'main' },
+                        React.createElement(
+                            'h3',
+                            null,
+                            'Error :('
+                        )
+                    );
+
+            }
         } else {
             return React.createElement(
                 'div',
@@ -194,13 +280,43 @@ var Sidebar = React.createClass({
     displayName: 'Sidebar',
 
     getInitialState: function () {
-        return { selected: null };
+        //Status: 0 = loading, 1 = success, 15 = backpack private
+        return { status: 0, selected: null };
     },
-    handleClick(i) {
+    XHRequest: new XMLHttpRequest(),
+    handleChange: function (evt) {
+        if (this.XHRequest.readyState == 4 && this.XHRequest.status == 200) {
+            var results = JSON.parse(evt.srcElement.responseText).result;
+
+            this.setState({ status: results.status });
+        }
+    },
+    handleError: function (evt) {
+        console.log(evt);
+    },
+    handleClick(i, key) {
         this.setState({ selected: this.props.users[i] });
+
+        console.log(this.props.users[i].steamid);
+
+        //Abort request if it's been sent and we havn't updated.
+        if (this.XHRequest.readyState === 1 || this.XHRequest.readyState === 2 || this.XHRequest.readyState === 3) {
+            this.XHRequest.abort();
+        }
+
+        //set status to loading.
+        this.setState({ status: 0 });
+
+        var requestURL = 'http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=' + KEY + '&SteamID=' + this.props.users[i].steamid;
+
+        this.XHRequest.addEventListener("readystatechange", this.handleChange);
+        this.XHRequest.addEventListener("error", this.handleError);
+        this.XHRequest.open("GET", requestURL);
+        this.XHRequest.send();
     },
     render: function () {
         var userList = this.props.users;
+
         return React.createElement(
             'div',
             null,
@@ -210,12 +326,12 @@ var Sidebar = React.createClass({
                 userList.map(function (user, i) {
                     return React.createElement(
                         'a',
-                        { className: 'user', key: user.steamid, onClick: this.handleClick.bind(null, i) },
+                        { className: this.state.selected !== user ? "user" : "user selected", key: user.steamid, onClick: this.handleClick.bind(null, i) },
                         user.personaname
                     );
                 }.bind(this))
             ),
-            React.createElement(PlayerProfile, { data: this.state.selected }),
+            React.createElement(PlayerProfile, { status: this.state.status, data: this.state.selected }),
             React.createElement('br', { style: {
                     clear: "both"
                 } })
@@ -305,11 +421,11 @@ var SearchBox = React.createClass({
                 ),
                 React.createElement(
                     'form',
-                    { onSubmit: this.handleSearch, onChange: this.handleSearchChange, style: {
+                    { onSubmit: this.handleSearch, style: {
                             width: "calc(50% - 115px)",
                             paddingRight: "10px"
                         } },
-                    React.createElement('input', { id: 'search', type: 'text', defaultValue: this.state.searchString, autoComplete: 'off', placeholder: 'Search' })
+                    React.createElement('input', { id: 'search', type: 'text', value: this.state.searchString, onChange: this.handleSearchChange, autoComplete: 'off', placeholder: 'Search' })
                 ),
                 React.createElement(
                     'form',
