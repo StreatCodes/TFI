@@ -62,22 +62,22 @@ var ItemTable = React.createClass({
     render: function () {
         var itemList = this.props.items;
 
-        switch (this.state.status) {
+        switch (this.props.status) {
             case 0:
                 return React.createElement(
                     'div',
-                    { className: 'main' },
+                    { className: 'itemTable' },
                     React.createElement(
                         'h3',
                         null,
-                        'Loading'
+                        'Loading backpack...'
                     )
                 );
                 break;
             case 1:
                 return React.createElement(
                     'div',
-                    null,
+                    { className: 'itemTable' },
                     React.createElement(
                         'table',
                         null,
@@ -163,7 +163,7 @@ var ItemTable = React.createClass({
             case 15:
                 return React.createElement(
                     'div',
-                    { className: 'main' },
+                    { className: 'itemTable' },
                     React.createElement(
                         'h3',
                         null,
@@ -174,11 +174,11 @@ var ItemTable = React.createClass({
             default:
                 return React.createElement(
                     'div',
-                    { className: 'main' },
+                    { className: 'itemTable' },
                     React.createElement(
                         'h3',
                         null,
-                        'Error :('
+                        'Error getting backpack :('
                     )
                 );
 
@@ -192,7 +192,7 @@ var PlayerProfile = React.createClass({
     //Status: 0 = loading, 1 = success, 15 = backpack private
     //Items: list of items in user backpack
     getInitialState: function () {
-        return { items: null, status: -1 };
+        return { user: null, items: null, status: -1 };
     },
     XHRequest: new XMLHttpRequest(),
     handleChange: function (e) {
@@ -205,9 +205,25 @@ var PlayerProfile = React.createClass({
     handleError: function (e) {
         console.log(e);
     },
-    componentWillUpdate: function () {
-        console.log("profile updating");
-        if (this.props.data !== null && this.state.status === -1) {
+    componentWillMount: function () {
+        this.setState({ user: this.props.userID, status: 0 });
+
+        var requestURL = 'http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=' + KEY + '&SteamID=' + this.props.data.steamid;
+
+        this.XHRequest.addEventListener("readystatechange", this.handleChange);
+        this.XHRequest.addEventListener("error", this.handleError);
+        this.XHRequest.open("GET", requestURL);
+        this.XHRequest.send();
+    },
+    componentDidUpdate: function () {
+        console.log('1');
+        if (this.props.userID !== this.state.user) {
+            console.log('2');
+            this.setState({ user: this.props.data.steamid, status: -1 });
+            console.log('userChange');
+        }
+
+        if (this.state.status === -1) {
             console.log('get items.');
             this.setState({ items: null, status: 0 });
             if (this.props.data !== null) {
@@ -217,7 +233,7 @@ var PlayerProfile = React.createClass({
                 }
 
                 //set status to loading.
-                this.setState({ status: 0 });
+                this.setState({ user: this.props.data.steamid, status: 0 });
 
                 var requestURL = 'http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=' + KEY + '&SteamID=' + this.props.data.steamid;
 
@@ -225,49 +241,43 @@ var PlayerProfile = React.createClass({
                 this.XHRequest.addEventListener("error", this.handleError);
                 this.XHRequest.open("GET", requestURL);
                 this.XHRequest.send();
+                console.log("send request.");
             }
         }
     },
     render: function () {
-        if (this.props.data !== null) {
-            return React.createElement(
-                'div',
-                { className: 'main' },
-                React.createElement('img', { src: this.props.data.avatarmedium, style: {
-                        float: "left",
-                        paddingRight: "20px",
-                        width: "64px",
-                        height: "64px"
-                    } }),
-                React.createElement(
-                    'h3',
-                    { href: this.props.data.profileurl },
-                    this.props.data.personaname
-                ),
-                React.createElement(
-                    'a',
-                    null,
-                    'Real name: ',
-                    this.props.data.realname
-                ),
-                React.createElement('br', null),
-                React.createElement(
-                    'a',
-                    null,
-                    'Location: ',
-                    this.props.data.loccountrycode,
-                    ', ',
-                    this.props.data.locstatecode
-                ),
-                this.state.status !== -1 ? React.createElement(ItemTable, { status: this.state.status, items: this.state.items }) : null
-            );
-        } else {
-            return React.createElement(
-                'div',
-                { className: 'main' },
-                'No user selected'
-            );
-        }
+        console.log('status: ' + this.state.status);
+        return React.createElement(
+            'div',
+            { className: 'main' },
+            React.createElement('img', { src: this.props.data.avatarmedium, style: {
+                    float: "left",
+                    paddingRight: "20px",
+                    width: "64px",
+                    height: "64px"
+                } }),
+            React.createElement(
+                'h3',
+                { href: this.props.data.profileurl },
+                this.props.data.personaname
+            ),
+            React.createElement(
+                'a',
+                null,
+                'Real name: ',
+                this.props.data.realname
+            ),
+            React.createElement('br', null),
+            React.createElement(
+                'a',
+                null,
+                'Location: ',
+                this.props.data.loccountrycode,
+                ', ',
+                this.props.data.locstatecode
+            ),
+            this.state.status !== -1 ? React.createElement(ItemTable, { status: this.state.status, items: this.state.items }) : null
+        );
     }
 });
 
@@ -299,7 +309,11 @@ var Sidebar = React.createClass({
                     );
                 }.bind(this))
             ),
-            React.createElement(PlayerProfile, { data: this.state.selected }),
+            this.state.selected !== null ? React.createElement(PlayerProfile, { userID: this.state.selected.steamid, data: this.state.selected }) : React.createElement(
+                'div',
+                { className: 'main' },
+                'No user selected'
+            ),
             React.createElement('br', { style: {
                     clear: "both"
                 } })

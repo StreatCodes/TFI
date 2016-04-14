@@ -58,19 +58,19 @@ qualities[15] = {
 
 var ItemTable = React.createClass({
     render: function() {
-		var itemList = this.props.items;
+        var itemList = this.props.items;
 
-        switch (this.state.status) {
+        switch (this.props.status) {
             case 0:
                 return (
-                    <div className="main">
-                        <h3>Loading</h3>
+                    <div className="itemTable">
+                        <h3>Loading backpack...</h3>
                     </div>
                 );
                 break;
             case 1:
                 return (
-                    <div>
+                    <div className="itemTable">
                         <table>
                             <colgroup>
                                 <col style={{
@@ -114,15 +114,15 @@ var ItemTable = React.createClass({
                 break;
             case 15:
                 return (
-                    <div className="main">
+                    <div className="itemTable">
                         <h3>Backpack private.</h3>
                     </div>
                 );
                 break;
             default:
                 return (
-                    <div className="main">
-                        <h3>Error :(</h3>
+                    <div className="itemTable">
+                        <h3>Error getting backpack :(</h3>
                     </div>
                 );
 
@@ -135,7 +135,7 @@ var PlayerProfile = React.createClass({
     //Status: 0 = loading, 1 = success, 15 = backpack private
     //Items: list of items in user backpack
     getInitialState: function() {
-        return {items: null, status: -1};
+        return {user: null, items: null, status: -1};
     },
     XHRequest: new XMLHttpRequest(),
     handleChange: function(e) {
@@ -148,9 +148,25 @@ var PlayerProfile = React.createClass({
     handleError: function(e) {
         console.log(e);
     },
-    componentWillUpdate: function() {
-        console.log("profile updating");
-        if (this.props.data !== null && this.state.status === -1) {
+    componentWillMount: function() {
+        this.setState({user: this.props.userID, status: 0});
+
+        var requestURL = 'http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=' + KEY + '&SteamID=' + this.props.data.steamid;
+
+        this.XHRequest.addEventListener("readystatechange", this.handleChange);
+        this.XHRequest.addEventListener("error", this.handleError);
+        this.XHRequest.open("GET", requestURL);
+        this.XHRequest.send();
+    },
+    componentDidUpdate: function() {
+		console.log('1');
+        if (this.props.userID !== this.state.user) {
+			console.log('2');
+            this.setState({user: this.props.data.steamid, status: -1});
+            console.log('userChange');
+        }
+
+        if (this.state.status === -1) {
             console.log('get items.');
             this.setState({items: null, status: 0});
             if (this.props.data !== null) {
@@ -160,7 +176,7 @@ var PlayerProfile = React.createClass({
                 }
 
                 //set status to loading.
-                this.setState({status: 0});
+                this.setState({user: this.props.data.steamid, status: 0});
 
                 var requestURL = 'http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=' + KEY + '&SteamID=' + this.props.data.steamid;
 
@@ -168,35 +184,31 @@ var PlayerProfile = React.createClass({
                 this.XHRequest.addEventListener("error", this.handleError);
                 this.XHRequest.open("GET", requestURL);
                 this.XHRequest.send();
+                console.log("send request.");
+
             }
         }
     },
     render: function() {
-        if (this.props.data !== null) {
-            return (
-                <div className="main">
+        console.log('status: ' + this.state.status);
+        return (
+            <div className="main">
 
-                    <img src={this.props.data.avatarmedium} style={{
-                        float: "left",
-                        paddingRight: "20px",
-                        width: "64px",
-                        height: "64px"
-                    }}/>
-                    <h3 href={this.props.data.profileurl}>{this.props.data.personaname}</h3>
-                    <a>Real name: {this.props.data.realname}</a><br/>
-                    <a>Location: {this.props.data.loccountrycode}, {this.props.data.locstatecode}</a>
+                <img src={this.props.data.avatarmedium} style={{
+                    float: "left",
+                    paddingRight: "20px",
+                    width: "64px",
+                    height: "64px"
+                }}/>
+                <h3 href={this.props.data.profileurl}>{this.props.data.personaname}</h3>
+                <a>Real name: {this.props.data.realname}</a><br/>
+                <a>Location: {this.props.data.loccountrycode}, {this.props.data.locstatecode}</a>
 
-                    {this.state.status !== -1
-                        ? <ItemTable status={this.state.status} items={this.state.items}/>
-                        : null}
-                </div>
-            );
-
-        } else {
-            return (
-                <div className="main">No user selected</div>
-            );
-        }
+                {this.state.status !== -1
+                    ? <ItemTable status={this.state.status} items={this.state.items}/>
+                    : null}
+            </div>
+        );
     }
 });
 
@@ -221,8 +233,9 @@ var Sidebar = React.createClass({
                             : "user selected"} key={user.steamid} onClick={this.handleClick.bind(null, i)}>{user.personaname}</a>;
                     }.bind(this))}
                 </div>
-
-                <PlayerProfile data={this.state.selected}/>
+                {this.state.selected !== null
+                    ? <PlayerProfile userID={this.state.selected.steamid} data={this.state.selected}/>
+                    : <div className="main">No user selected</div>}
                 <br style={{
                     clear: "both"
                 }}/>
